@@ -1,115 +1,57 @@
 package by.bsuir.headkeepers.githubanalyzer
 
-import org.jetbrains.exposed.sql.*
+import by.bsuir.headkeepers.githubanalyzer.data.bean.Repository
+import by.bsuir.headkeepers.githubanalyzer.data.bean.Star
+import by.bsuir.headkeepers.githubanalyzer.data.bean.User
+import by.bsuir.headkeepers.githubanalyzer.data.table.Repositories
+import by.bsuir.headkeepers.githubanalyzer.data.table.Stars
+import by.bsuir.headkeepers.githubanalyzer.data.table.Users
+import by.bsuir.headkeepers.githubanalyzer.data.table.UsersRepositories
+import by.bsuir.headkeepers.githubanalyzer.service.RepositoriesService
+import by.bsuir.headkeepers.githubanalyzer.support.DatabaseConnection
 import org.jetbrains.exposed.sql.SchemaUtils.create
-import org.jetbrains.exposed.sql.SchemaUtils.drop
+import org.jetbrains.exposed.sql.SizedCollection
 import org.jetbrains.exposed.sql.transactions.transaction
-
-object Users : Table() {
-    val id = varchar("id", 10).primaryKey() // Column<String>
-    val name = varchar("name", length = 50) // Column<String>
-    val cityId = (integer("city_id") references Cities.id).nullable() // Column<Int?>
-}
-
-object Cities : Table() {
-    val id = integer("id").autoIncrement().primaryKey() // Column<Int>
-    val name = varchar("name", 50) // Column<String>
-}
+import org.joda.time.DateTime
 
 fun main(args: Array<String>) {
-    Database.connect("jdbc:h2:mem:test", driver = "org.h2.Driver")
+    DatabaseConnection.open()
 
     transaction {
-        create (Cities, Users)
+        create(Repositories, Users, UsersRepositories, Stars)
 
-        val saintPetersburgId = Cities.insert {
-            it[name] = "St. Petersburg"
-        } get Cities.id
-
-        val munichId = Cities.insert {
-            it[name] = "Munich"
-        } get Cities.id
-
-        Cities.insert {
-            it[name] = "Prague"
+        val andrey = User.new {
+            name = "Andrey"
+            age = 21
         }
 
-        Users.insert {
-            it[id] = "andrey"
-            it[name] = "Andrey"
-            it[cityId] = saintPetersburgId
+        val maxim: User = User.new {
+            name = "Maxim"
+            age = 21
         }
 
-        Users.insert {
-            it[id] = "sergey"
-            it[name] = "Sergey"
-            it[cityId] = munichId
+        val headKeeperRepo = RepositoriesService.create("HeadKeeper", DateTime.now(), listOf(andrey, maxim))
+
+        val starByAndrey = Star.new {
+            creationDate = DateTime.now()
+            user = andrey
+            repository = headKeeperRepo
         }
 
-        Users.insert {
-            it[id] = "eugene"
-            it[name] = "Eugene"
-            it[cityId] = munichId
+        val starByMaxim = Star.new {
+            creationDate = DateTime.now()
+            user = maxim
+            repository = headKeeperRepo
         }
 
-        Users.insert {
-            it[id] = "alex"
-            it[name] = "Alex"
-            it[cityId] = null
+        println("All users:")
+        for (user in User.all()) {
+            println("${user.name}: ${user.age}")
         }
 
-        Users.insert {
-            it[id] = "smth"
-            it[name] = "Something"
-            it[cityId] = null
+        println("All repos:")
+        for (repository in RepositoriesService.findAllByName("Hea")) {
+            println("${repository.name}: ${repository.stars.count()}: ${repository.users.count()}")
         }
-
-        Users.update({Users.id eq "alex"}) {
-            it[name] = "Alexey"
-        }
-
-        Users.deleteWhere{Users.name like "%thing"}
-
-        println("All cities:")
-
-        for (city in Cities.selectAll()) {
-            println("${city[Cities.id]}: ${city[Cities.name]}")
-        }
-
-        println("Manual join:")
-        (Users innerJoin Cities).slice(Users.name, Cities.name).
-                select {(Users.id.eq("andrey") or Users.name.eq("Sergey")) and
-                        Users.id.eq("sergey") and Users.cityId.eq(Cities.id)}.forEach {
-            println("${it[Users.name]} lives in ${it[Cities.name]}")
-        }
-
-        println("Join with foreign key:")
-
-
-        (Users innerJoin Cities).slice(Users.name, Users.cityId, Cities.name).
-                select {Cities.name.eq("St. Petersburg") or Users.cityId.isNull()}.forEach {
-            if (it[Users.cityId] != null) {
-                println("${it[Users.name]} lives in ${it[Cities.name]}")
-            }
-            else {
-                println("${it[Users.name]} lives nowhere")
-            }
-        }
-
-        println("Functions and group by:")
-
-        ((Cities innerJoin Users).slice(Cities.name, Users.id.count()).selectAll().groupBy(Cities.name)).forEach {
-            val cityName = it[Cities.name]
-            val userCount = it[Users.id.count()]
-
-            if (userCount > 0) {
-                println("$userCount user(s) live(s) in $cityName")
-            } else {
-                println("Nobody lives in $cityName")
-            }
-        }
-
-        drop (Users, Cities)
-
     }
 }

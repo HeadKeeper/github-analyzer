@@ -6,7 +6,7 @@ buildscript {
         kotlinVersion = '1.2.71'
         kotlinLoggingVersion = '1.5.3'
         // db
-        h2DriverVersion = '1.0.60'
+        h2DriverVersion = '1.4.197'
         exposedVersion = '0.10.5'
         //logger
         log4jVersion = "1.7.21"
