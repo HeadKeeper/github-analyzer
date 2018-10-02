@@ -1,20 +1,11 @@
 package by.bsuir.headkeepers.githubanalyzer
 
-import by.bsuir.headkeepers.githubanalyzer.data.bean.Repository
-import by.bsuir.headkeepers.githubanalyzer.data.bean.Star
-import by.bsuir.headkeepers.githubanalyzer.data.bean.User
-import by.bsuir.headkeepers.githubanalyzer.data.table.Repositories
-import by.bsuir.headkeepers.githubanalyzer.data.table.Stars
-import by.bsuir.headkeepers.githubanalyzer.data.table.Users
-import by.bsuir.headkeepers.githubanalyzer.data.table.UsersRepositories
-import by.bsuir.headkeepers.githubanalyzer.service.RepositoriesService
-import by.bsuir.headkeepers.githubanalyzer.support.DatabaseConnection
-import org.jetbrains.exposed.sql.SchemaUtils.create
-import org.jetbrains.exposed.sql.SizedCollection
-import org.jetbrains.exposed.sql.transactions.transaction
-import org.joda.time.DateTime
+import by.bsuir.headkeepers.githubanalyzer.api.DataFetcher
+import by.bsuir.headkeepers.githubanalyzer.support.Settings
+import java.util.logging.Handler
 
 fun main(args: Array<String>) {
+    /*
     DatabaseConnection.open()
 
     transaction {
@@ -52,6 +43,20 @@ fun main(args: Array<String>) {
         println("All repos:")
         for (repository in RepositoriesService.findAllByName("Hea")) {
             println("${repository.name}: ${repository.stars.count()}: ${repository.users.count()}")
+        }
+    }
+    */
+
+
+    val fetcher = DataFetcher()
+
+    fetcher.getLatestTrendingRepositoriesInLastWeek {
+        result: Pair<List<GetLatestTrendingRepositoriesInLastWeekQuery.Edge>?, Error?> ->
+        result.first!!.forEach { t: GetLatestTrendingRepositoriesInLastWeekQuery.Edge? ->
+            val repo = t!!.node()!!
+            if (repo is GetLatestTrendingRepositoriesInLastWeekQuery.AsRepository) {
+                println(repo.name())
+            }
         }
     }
 }
