@@ -6,3 +6,4 @@ out/
 
 database/*.log.db
 database/*.trace.db
+/src/main/resources/application.properties
