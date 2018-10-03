@@ -1,8 +1,7 @@
+@file:JvmName("GithubAnalyzerApplication")
 package by.bsuir.headkeepers.githubanalyzer
 
 import by.bsuir.headkeepers.githubanalyzer.api.DataFetcher
-import by.bsuir.headkeepers.githubanalyzer.support.Settings
-import java.util.logging.Handler
 
 fun main(args: Array<String>) {
     /*
