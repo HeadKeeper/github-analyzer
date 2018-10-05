@@ -1,16 +1,20 @@
 package by.bsuir.headkeepers.githubanalyzer.api
 
-import GetLatestTrendingRepositoriesInLastWeekQuery
+import ExploreRepositoriesQuery
 
 import by.bsuir.headkeepers.githubanalyzer.support.Settings
 
 import com.apollographql.apollo.ApolloCall
 import com.apollographql.apollo.ApolloClient
 import com.apollographql.apollo.exception.ApolloException
+import com.apollographql.apollo.response.CustomTypeAdapter
+import com.apollographql.apollo.response.CustomTypeValue
 
 import okhttp3.Interceptor
 import okhttp3.OkHttpClient
 import okhttp3.Response
+import org.joda.time.DateTime
+import type.CustomType
 
 import type.SearchType
 
@@ -21,10 +25,10 @@ import java.util.concurrent.TimeUnit
 
 class DataFetcher {
 
-    fun getLatestTrendingRepositoriesInLastWeek(completion: (result: Pair<List<GetLatestTrendingRepositoriesInLastWeekQuery.Edge>?, Error?>) -> Unit) {
+    fun exploreRepositories(completion: (result: Pair<List<ExploreRepositoriesQuery.Edge>?, Error?>) -> Unit) {
         val lastWeekDate = LocalDate.now().minusDays(7)
         val formattedDateText = DateTimeFormatter.ofPattern("yyyy-MM-dd", Locale.ENGLISH).format(lastWeekDate)
-        val queryCall = GetLatestTrendingRepositoriesInLastWeekQuery
+        val queryCall = ExploreRepositoriesQuery
             .builder()
             .query("created:>$formattedDateText sort:stars-desc")
             .first(25)
@@ -32,12 +36,12 @@ class DataFetcher {
             .build()
 
         apolloClient.query(queryCall)
-            .enqueue(object : ApolloCall.Callback<GetLatestTrendingRepositoriesInLastWeekQuery.Data>() {
+            .enqueue(object : ApolloCall.Callback<ExploreRepositoriesQuery.Data>() {
                 override fun onFailure(e: ApolloException) {
                     completion(Pair(null, Error(e.message)))
                 }
 
-                override fun onResponse(response: com.apollographql.apollo.api.Response<GetLatestTrendingRepositoriesInLastWeekQuery.Data>) {
+                override fun onResponse(response: com.apollographql.apollo.api.Response<ExploreRepositoriesQuery.Data>) {
                     val errors = response.errors()
                     if (!errors.isEmpty()) {
                         val message = errors[0]?.message() ?: ""
@@ -64,6 +68,8 @@ class DataFetcher {
             ApolloClient.builder()
                 .serverUrl(Settings.get("github.api"))
                 .okHttpClient(httpClient)
+                .addCustomTypeAdapter(CustomType.URI, URIConverter())
+                .addCustomTypeAdapter(CustomType.DATETIME, DateTimeConverter())
                 .build()
         }
 
@@ -74,6 +80,26 @@ class DataFetcher {
                         .header("Authorization", "Bearer ${Settings.get("github.token")}")
                         .build()
                 )
+            }
+        }
+
+        private class URIConverter : CustomTypeAdapter<String> {
+            override fun encode(value: String): CustomTypeValue<*> {
+                return CustomTypeValue.fromRawValue(value)
+            }
+
+            override fun decode(value: CustomTypeValue<*>): String {
+                return value.value.toString()
+            }
+        }
+
+        private class DateTimeConverter : CustomTypeAdapter<DateTime> {
+            override fun encode(value: DateTime): CustomTypeValue<*> {
+                return CustomTypeValue.fromRawValue(value)
+            }
+
+            override fun decode(value: CustomTypeValue<*>): DateTime {
+                return DateTime(value.value.toString())
             }
         }
 

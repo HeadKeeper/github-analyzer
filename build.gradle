@@ -49,6 +49,7 @@ compileKotlin {
         freeCompilerArgs = ["-Xjsr305=strict"]
     }
 }
+
 compileTestKotlin {
     kotlinOptions {
         jvmTarget = "1.8"
@@ -84,8 +85,16 @@ dependencies {
     compile "ch.qos.logback:logback-classic:${loggerVersion}"
 }
 
-task runApplication(type: JavaExec) {
+task updateDatabase(type: JavaExec) {
     group 'application'
     main = 'by.bsuir.headkeepers.githubanalyzer.GithubAnalyzerApplication'
     classpath = sourceSets.main.runtimeClasspath
+    args = ['UPDATE_DATABASE']
+}
+
+task runApp(type: JavaExec) {
+    group 'application'
+    main = 'by.bsuir.headkeepers.githubanalyzer.GithubAnalyzerApplication'
+    classpath = sourceSets.main.runtimeClasspath
+    args = ['RUN_APPLICATION']
 }

@@ -1,19 +1,66 @@
-query GetLatestTrendingRepositoriesInLastWeek($first: Int, $query: String!, $type: SearchType!) {
+query ExploreRepositories($first: Int, $query: String!, $type: SearchType!) {
     search(first: $first, query: $query, type: $type) {
         edges {
             node {
                 ... on Repository {
                     name
-                    owner {
-                        login
-                    }
                     description
+                    owner {
+                        __typename
+                        login
+                        avatarUrl
+                    }
+                    createdAt
+                    pushedAt
                     stargazers {
                         totalCount
                     }
-                    primaryLanguage {
+                    licenseInfo {
                         name
                     }
+                    diskUsage
+                    primaryLanguage {
+                        name
+                        color
+                    }
+                    languages(first: 100) {
+                        nodes {
+                            name
+                            color
+                        }
+                    }
+                    defaultBranchRef {
+                        name
+                        associatedPullRequests {
+                            totalCount
+                        }
+                    }
+                    pullRequests {
+                        totalCount
+                    }
+                    mentionableUsers(first: 100) {
+                        edges {
+                            node {
+                                login
+                                name
+                            }
+                        }
+                    }
+                    hasWikiEnabled
+                    hasIssuesEnabled
+                    issues {
+                        totalCount
+                    }
+                    codeOfConduct {
+                        name
+                    }
+                    releases {
+                        totalCount
+                    }
+                    watchers {
+                        totalCount
+                    }
+                    forkCount
                 }
             }
         }
